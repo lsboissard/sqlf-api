@@ -35,7 +35,6 @@ describe('CodeExplanationController', () => {
     it('should call service and return response', async () => {
       const mockDto: ExplainCodeDto = {
         code: 'function test() { return 42; }',
-        apiKey: 'test-key',
         language: 'javascript',
       };
 

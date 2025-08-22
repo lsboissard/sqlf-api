@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { CodeExplanationService } from './code-explanation.service';
 import { ExplainCodeDto } from './dto/explain-code.dto';
@@ -8,6 +9,7 @@ import { AxiosResponse } from 'axios';
 describe('CodeExplanationService', () => {
   let service: CodeExplanationService;
   let httpService: HttpService;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,11 +21,18 @@ describe('CodeExplanationService', () => {
             post: jest.fn(),
           },
         },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('test-api-key'),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<CodeExplanationService>(CodeExplanationService);
     httpService = module.get<HttpService>(HttpService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -33,7 +42,6 @@ describe('CodeExplanationService', () => {
   describe('explainCode', () => {
     const mockExplainCodeDto: ExplainCodeDto = {
       code: 'function hello() { return "world"; }',
-      apiKey: 'test-api-key',
       language: 'javascript',
     };
 
@@ -125,6 +133,15 @@ describe('CodeExplanationService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Rate limit exceeded. Please try again later.');
+    });
+
+    it('should handle missing API key configuration', async () => {
+      jest.spyOn(configService, 'get').mockReturnValue(undefined);
+
+      const result = await service.explainCode(mockExplainCodeDto);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DEEPSEEK_API_KEY not configured');
     });
   });
 });

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ExplainCodeDto } from './dto/explain-code.dto';
@@ -10,13 +11,21 @@ export class CodeExplanationService {
   private readonly deepSeekApiUrl =
     'https://api.deepseek.com/v1/chat/completions';
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async explainCode(
     explainCodeDto: ExplainCodeDto,
   ): Promise<CodeExplanationResponseDto> {
     try {
-      const { code, apiKey, language = 'unknown' } = explainCodeDto;
+      const { code, language = 'unknown' } = explainCodeDto;
+      const apiKey = this.configService.get<string>('app.deepseekApiKey');
+
+      if (!apiKey) {
+        throw new Error('DEEPSEEK_API_KEY not configured');
+      }
 
       const prompt = this.buildPrompt(code, language);
 

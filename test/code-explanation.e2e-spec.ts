@@ -7,6 +7,9 @@ describe('CodeExplanationController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
+    // Set test environment variable
+    process.env.DEEPSEEK_API_KEY = 'test-api-key';
+    
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -18,6 +21,7 @@ describe('CodeExplanationController (e2e)', () => {
 
   afterEach(async () => {
     await app.close();
+    delete process.env.DEEPSEEK_API_KEY;
   });
 
   describe('/explain-code (POST)', () => {
@@ -32,28 +36,16 @@ describe('CodeExplanationController (e2e)', () => {
       return request(app.getHttpServer())
         .post('/explain-code')
         .send({
-          apiKey: 'test-key',
           language: 'javascript',
         })
         .expect(400);
     });
 
-    it('should validate apiKey field', () => {
-      return request(app.getHttpServer())
-        .post('/explain-code')
-        .send({
-          code: 'function test() {}',
-          language: 'javascript',
-        })
-        .expect(400);
-    });
-
-    it('should accept valid request (will fail due to invalid API key)', () => {
+    it('should accept valid request (will fail due to network/API)', () => {
       return request(app.getHttpServer())
         .post('/explain-code')
         .send({
           code: 'function test() { return 42; }',
-          apiKey: 'invalid-key',
           language: 'javascript',
         })
         .expect(201)
@@ -62,7 +54,7 @@ describe('CodeExplanationController (e2e)', () => {
           expect(res.body).toHaveProperty('explainedCode');
           expect(res.body).toHaveProperty('success');
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(res.body.success).toBe(false); // Will fail due to invalid API key
+          expect(res.body.success).toBe(false); // Will fail due to network or API issues in test environment
         });
     });
   });

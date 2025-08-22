@@ -6,10 +6,6 @@ export class ExplainCodeDto {
   code: string;
 
   @IsString()
-  @IsNotEmpty()
-  apiKey: string;
-
-  @IsString()
   @IsOptional()
   language?: string;
 }
