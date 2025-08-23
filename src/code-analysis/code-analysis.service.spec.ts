@@ -41,8 +41,10 @@ describe('CodeAnalysisService', () => {
 
   describe('analyzeCode', () => {
     const mockAnalyzeCodeDto: AnalyzeCodeDto = {
-      code: 'function add(a, b) { return a + b; }',
-      language: 'javascript',
+      code: 'SELECT * FROM users WHERE status = 1',
+      language: 'sql',
+      sqlDialect: 'postgresql',
+      responseLanguage: 'pt-br',
     };
 
     it('should successfully analyze code with JSON response', async () => {
@@ -52,8 +54,8 @@ describe('CodeAnalysisService', () => {
             {
               message: {
                 content: JSON.stringify({
-                  analysis: 'Simple addition function with clear purpose',
-                  suggestions: ['Add input validation', 'Add JSDoc comments'],
+                  analysis: 'Consulta SQL simples que seleciona todos os campos de usuários ativos',
+                  suggestions: ['Evite SELECT *, especifique colunas', 'Considere índices para performance'],
                 }),
               },
             },
@@ -71,8 +73,8 @@ describe('CodeAnalysisService', () => {
 
       expect(result.success).toBe(true);
       expect(result.originalCode).toBe(mockAnalyzeCodeDto.code);
-      expect(result.analysis).toContain('Simple addition function');
-      expect(result.suggestions).toEqual(['Add input validation', 'Add JSDoc comments']);
+      expect(result.analysis).toContain('Consulta SQL simples');
+      expect(result.suggestions).toEqual(['Evite SELECT *, especifique colunas', 'Considere índices para performance']);
       expect(result.error).toBeUndefined();
     });
 
@@ -82,12 +84,12 @@ describe('CodeAnalysisService', () => {
           choices: [
             {
               message: {
-                content: `This is a simple addition function.
+                content: `Esta é uma consulta SQL que seleciona usuários ativos.
                 
-                Suggestions:
-                1. Add input validation
-                2. Add JSDoc comments
-                3. Consider error handling`,
+                Sugestões:
+                1. Evite usar SELECT *
+                2. Adicione índices para performance
+                3. Considere usar LIMIT para grandes resultados`,
               },
             },
           ],
@@ -104,7 +106,7 @@ describe('CodeAnalysisService', () => {
 
       expect(result.success).toBe(true);
       expect(result.originalCode).toBe(mockAnalyzeCodeDto.code);
-      expect(result.analysis).toContain('simple addition function');
+      expect(result.analysis).toContain('consulta SQL que seleciona usuários ativos');
       expect(result.suggestions.length).toBeGreaterThan(0);
     });
 
@@ -176,6 +178,73 @@ describe('CodeAnalysisService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('DEEPSEEK_API_KEY not configured');
+    });
+
+    it('should work with default parameters when not specified', async () => {
+      const simpleDto = {
+        code: 'SELECT COUNT(*) FROM orders'
+      };
+
+      const mockResponse: AxiosResponse = {
+        data: {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  analysis: 'Consulta de agregação que conta registros na tabela orders',
+                  suggestions: ['Considere filtros para melhor performance', 'Use índices apropriados'],
+                }),
+              },
+            },
+          ],
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
+
+      const result = await service.analyzeCode(simpleDto);
+
+      expect(result.success).toBe(true);
+      expect(result.analysis).toContain('Consulta de agregação');
+    });
+
+    it('should provide dialect-specific analysis', async () => {
+      const dialectDto = {
+        code: 'SELECT TOP 10 * FROM users',
+        sqlDialect: 't-sql',
+        responseLanguage: 'en'
+      };
+
+      const mockResponse: AxiosResponse = {
+        data: {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  analysis: 'T-SQL query using TOP clause for limiting results',
+                  suggestions: ['Consider using OFFSET-FETCH for pagination', 'Add ORDER BY for consistent results'],
+                }),
+              },
+            },
+          ],
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
+
+      const result = await service.analyzeCode(dialectDto);
+
+      expect(result.success).toBe(true);
+      expect(result.analysis).toContain('T-SQL query');
+      expect(result.suggestions).toContain('Consider using OFFSET-FETCH for pagination');
     });
   });
 });
