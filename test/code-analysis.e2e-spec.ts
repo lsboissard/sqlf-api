@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 
-describe('CodeExplanationController (e2e)', () => {
+describe('CodeAnalysisController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -24,17 +24,17 @@ describe('CodeExplanationController (e2e)', () => {
     delete process.env.DEEPSEEK_API_KEY;
   });
 
-  describe('/explain-code (POST)', () => {
+  describe('/analyze-code (POST)', () => {
     it('should validate required fields', () => {
       return request(app.getHttpServer())
-        .post('/explain-code')
+        .post('/analyze-code')
         .send({})
         .expect(400);
     });
 
     it('should validate code field', () => {
       return request(app.getHttpServer())
-        .post('/explain-code')
+        .post('/analyze-code')
         .send({
           language: 'javascript',
         })
@@ -43,15 +43,16 @@ describe('CodeExplanationController (e2e)', () => {
 
     it('should accept valid request (will fail due to network/API)', () => {
       return request(app.getHttpServer())
-        .post('/explain-code')
+        .post('/analyze-code')
         .send({
-          code: 'function test() { return 42; }',
+          code: 'function add(a, b) { return a + b; }',
           language: 'javascript',
         })
         .expect(201)
         .expect((res) => {
           expect(res.body).toHaveProperty('originalCode');
-          expect(res.body).toHaveProperty('explainedCode');
+          expect(res.body).toHaveProperty('analysis');
+          expect(res.body).toHaveProperty('suggestions');
           expect(res.body).toHaveProperty('success');
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           expect(res.body.success).toBe(false); // Will fail due to network or API issues in test environment

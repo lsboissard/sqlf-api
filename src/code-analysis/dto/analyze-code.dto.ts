@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class ExplainCodeDto {
+export class AnalyzeCodeDto {
   @IsString()
   @IsNotEmpty()
   code: string;
