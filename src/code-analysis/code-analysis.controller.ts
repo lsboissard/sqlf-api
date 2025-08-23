@@ -25,12 +25,12 @@ export class CodeAnalysisController {
 
   @Post()
   @ApiOperation({
-    summary: 'Analisar código',
-    description: 'Analisa o código fornecido e oferece sugestões de melhoria usando IA',
+    summary: 'Analisar código SQL',
+    description: 'Analisa o código SQL fornecido e oferece sugestões de melhoria específicas para o dialeto especificado',
   })
   @ApiBody({
     type: AnalyzeCodeDto,
-    description: 'Dados do código a ser analisado',
+    description: 'Dados do código SQL a ser analisado',
   })
   @ApiResponse({
     status: HttpStatus.OK,

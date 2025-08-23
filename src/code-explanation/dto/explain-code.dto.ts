@@ -1,10 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { SqlDialect, ResponseLanguage } from '../../common/enums';
 
 export class ExplainCodeDto {
   @ApiProperty({
-    description: 'Código a ser explicado',
-    example: 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}',
+    description: 'Código SQL a ser explicado',
+    example: 'SELECT * FROM users WHERE status = 1 AND created_at > \'2023-01-01\'',
     type: String,
   })
   @IsString()
@@ -12,12 +13,35 @@ export class ExplainCodeDto {
   code: string;
 
   @ApiProperty({
-    description: 'Linguagem de programação do código (opcional)',
-    example: 'javascript',
+    description: 'Linguagem de programação do código',
+    example: 'sql',
     type: String,
     required: false,
+    default: 'sql',
   })
   @IsString()
   @IsOptional()
-  language?: string;
+  language?: string = 'sql';
+
+  @ApiProperty({
+    description: 'Dialeto SQL a ser considerado na explicação',
+    enum: SqlDialect,
+    example: SqlDialect.MYSQL,
+    required: false,
+    default: SqlDialect.STANDARD,
+  })
+  @IsEnum(SqlDialect)
+  @IsOptional()
+  sqlDialect?: SqlDialect = SqlDialect.STANDARD;
+
+  @ApiProperty({
+    description: 'Idioma dos comentários explicativos',
+    enum: ResponseLanguage,
+    example: ResponseLanguage.PT_BR,
+    required: false,
+    default: ResponseLanguage.PT_BR,
+  })
+  @IsEnum(ResponseLanguage)
+  @IsOptional()
+  responseLanguage?: ResponseLanguage = ResponseLanguage.PT_BR;
 }

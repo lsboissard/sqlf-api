@@ -41,8 +41,10 @@ describe('CodeExplanationService', () => {
 
   describe('explainCode', () => {
     const mockExplainCodeDto: ExplainCodeDto = {
-      code: 'function hello() { return "world"; }',
-      language: 'javascript',
+      code: 'SELECT * FROM users WHERE status = 1',
+      language: 'sql',
+      sqlDialect: 'mysql',
+      responseLanguage: 'pt-br',
     };
 
     it('should successfully explain code', async () => {
@@ -52,7 +54,7 @@ describe('CodeExplanationService', () => {
             {
               message: {
                 content:
-                  '// Function that returns a greeting\nfunction hello() { return "world"; }',
+                  '-- Seleciona todos os campos dos usuários ativos\nSELECT * FROM users WHERE status = 1',
               },
             },
           ],
@@ -70,7 +72,7 @@ describe('CodeExplanationService', () => {
       expect(result.success).toBe(true);
       expect(result.originalCode).toBe(mockExplainCodeDto.code);
       expect(result.explainedCode).toContain(
-        'Function that returns a greeting',
+        'Seleciona todos os campos dos usuários ativos',
       );
       expect(result.error).toBeUndefined();
     });
@@ -142,6 +144,65 @@ describe('CodeExplanationService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('DEEPSEEK_API_KEY not configured');
+    });
+
+    it('should work with default parameters when not specified', async () => {
+      const simpleDto = {
+        code: 'SELECT name FROM users'
+      };
+
+      const mockResponse: AxiosResponse = {
+        data: {
+          choices: [
+            {
+              message: {
+                content: '-- Seleciona nomes dos usuários\nSELECT name FROM users',
+              },
+            },
+          ],
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
+
+      const result = await service.explainCode(simpleDto);
+
+      expect(result.success).toBe(true);
+      expect(result.explainedCode).toContain('Seleciona nomes dos usuários');
+    });
+
+    it('should use English when responseLanguage is en', async () => {
+      const englishDto = {
+        code: 'SELECT * FROM products',
+        responseLanguage: 'en'
+      };
+
+      const mockResponse: AxiosResponse = {
+        data: {
+          choices: [
+            {
+              message: {
+                content: '-- Select all fields from products table\nSELECT * FROM products',
+              },
+            },
+          ],
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse));
+
+      const result = await service.explainCode(englishDto);
+
+      expect(result.success).toBe(true);
+      expect(result.explainedCode).toContain('Select all fields');
     });
   });
 });

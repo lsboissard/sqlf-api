@@ -2,14 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CodeExplanationResponseDto {
   @ApiProperty({
-    description: 'Código original fornecido pelo usuário',
-    example: 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}',
+    description: 'Código SQL original fornecido pelo usuário',
+    example: 'SELECT * FROM users WHERE status = 1 AND created_at > \'2023-01-01\'',
   })
   originalCode: string;
 
   @ApiProperty({
-    description: 'Código com explicações e comentários adicionados',
-    example: '// Função recursiva para calcular números da sequência de Fibonacci\nfunction fibonacci(n) {\n  // Caso base: se n é 0 ou 1, retorna o próprio valor\n  if (n <= 1) return n;\n  // Caso recursivo: soma dos dois números anteriores na sequência\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}',
+    description: 'Código SQL com explicações e comentários adicionados',
+    example: '-- Seleciona todas as colunas da tabela users\nSELECT * \nFROM users \n-- Filtra apenas usuários ativos (status = 1)\nWHERE status = 1 \n  -- E que foram criados após 1º de janeiro de 2023\n  AND created_at > \'2023-01-01\'',
   })
   explainedCode: string;
 

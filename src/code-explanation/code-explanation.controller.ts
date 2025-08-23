@@ -25,12 +25,12 @@ export class CodeExplanationController {
 
   @Post()
   @ApiOperation({
-    summary: 'Explicar código',
-    description: 'Adiciona comentários e explicações detalhadas ao código fornecido usando IA',
+    summary: 'Explicar código SQL',
+    description: 'Adiciona comentários explicativos diretamente no código SQL fornecido, considerando dialeto e idioma especificados',
   })
   @ApiBody({
     type: ExplainCodeDto,
-    description: 'Dados do código a ser explicado',
+    description: 'Dados do código SQL a ser explicado',
   })
   @ApiResponse({
     status: HttpStatus.OK,

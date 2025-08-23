@@ -2,24 +2,24 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CodeAnalysisResponseDto {
   @ApiProperty({
-    description: 'Código original fornecido pelo usuário',
-    example: 'function processUser(user) {\n  if (user == null) return;\n  user.name = user.name.toLowerCase();\n  console.log(user);\n}',
+    description: 'Código SQL original fornecido pelo usuário',
+    example: 'SELECT * FROM users WHERE status = 1 AND created_at > \'2023-01-01\'',
   })
   originalCode: string;
 
   @ApiProperty({
-    description: 'Análise detalhada do código fornecido',
-    example: 'O código apresenta uma função que processa dados de usuário. A função verifica se o usuário é nulo e modifica o nome para minúsculas antes de imprimir no console.',
+    description: 'Análise detalhada do código SQL fornecido',
+    example: 'O código apresenta uma consulta SQL simples que seleciona todos os campos da tabela users. A consulta utiliza filtros para buscar apenas usuários ativos e criados recentemente.',
   })
   analysis: string;
 
   @ApiProperty({
-    description: 'Lista de sugestões de melhoria para o código',
+    description: 'Lista de sugestões de melhoria para o código SQL',
     example: [
-      'Use strict equality (===) instead of loose equality (==) for null checks',
-      'Add proper error handling for edge cases',
-      'Consider returning the modified user object instead of void',
-      'Add input validation to ensure user.name exists before calling toLowerCase()',
+      'Evite usar SELECT * em consultas de produção, especifique apenas as colunas necessárias',
+      'Considere criar um índice composto em (status, created_at) para melhor performance',
+      'Use parâmetros para a data em vez de valores hard-coded',
+      'Considere usar uma função de data para melhor legibilidade',
       'Replace console.log with proper logging mechanism'
     ],
     type: [String],
