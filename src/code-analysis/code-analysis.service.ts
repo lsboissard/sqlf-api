@@ -20,14 +20,19 @@ export class CodeAnalysisService {
     analyzeCodeDto: AnalyzeCodeDto,
   ): Promise<CodeAnalysisResponseDto> {
     try {
-      const { code, language = 'unknown' } = analyzeCodeDto;
+      const { 
+        code, 
+        language = 'sql',
+        sqlDialect = 'standard',
+        responseLanguage = 'pt-br'
+      } = analyzeCodeDto;
       const apiKey = this.configService.get<string>('app.deepseekApiKey');
 
       if (!apiKey) {
         throw new Error('DEEPSEEK_API_KEY not configured');
       }
 
-      const prompt = this.buildAnalysisPrompt(code, language);
+      const prompt = this.buildAnalysisPrompt(code, language, sqlDialect, responseLanguage);
 
       const requestBody = {
         model: 'deepseek-coder',
@@ -75,8 +80,36 @@ export class CodeAnalysisService {
     }
   }
 
-  private buildAnalysisPrompt(code: string, language: string): string {
-    return `You are a senior software engineer and code reviewer. Please analyze the following ${language} code and provide:
+  private buildAnalysisPrompt(code: string, language: string, sqlDialect: string, responseLanguage: string): string {
+    const isPortuguese = responseLanguage === 'pt-br';
+    const dialectInfo = this.getDialectInfo(sqlDialect);
+    
+    if (isPortuguese) {
+      return `Você é um engenheiro de software sênior e revisor de código SQL. Por favor, analise o seguinte código ${dialectInfo} e forneça:
+
+1. Uma análise detalhada da estrutura, padrões e qualidade do código
+2. Uma lista de sugestões específicas de melhoria
+
+Por favor, formate sua resposta como JSON com a seguinte estrutura:
+{
+  "analysis": "Análise detalhada do código...",
+  "suggestions": ["Sugestão 1", "Sugestão 2", "..."]
+}
+
+Foque em:
+- Legibilidade e manutenibilidade do código
+- Otimizações de performance específicas para ${sqlDialect.toUpperCase()}
+- Melhores práticas e padrões de design
+- Potenciais bugs ou casos extremos
+- Considerações de segurança (se aplicável)
+- Recomendações de teste
+
+Código SQL para analisar:
+\`\`\`sql
+${code}
+\`\`\``;
+    } else {
+      return `You are a senior software engineer and SQL code reviewer. Please analyze the following ${dialectInfo} code and provide:
 
 1. A detailed analysis of the code's structure, patterns, and quality
 2. A list of specific improvement suggestions
@@ -89,16 +122,30 @@ Please format your response as JSON with the following structure:
 
 Focus on:
 - Code readability and maintainability
-- Performance optimizations
+- Performance optimizations specific to ${sqlDialect.toUpperCase()}
 - Best practices and design patterns
 - Potential bugs or edge cases
 - Security considerations (if applicable)
 - Testing recommendations
 
-Code to analyze:
-\`\`\`${language}
+SQL code to analyze:
+\`\`\`sql
 ${code}
 \`\`\``;
+    }
+  }
+
+  private getDialectInfo(sqlDialect: string): string {
+    const dialectMap: Record<string, { en: string; pt: string }> = {
+      't-sql': { en: 'T-SQL (SQL Server)', pt: 'T-SQL (SQL Server)' },
+      'mysql': { en: 'MySQL', pt: 'MySQL' },
+      'postgresql': { en: 'PostgreSQL', pt: 'PostgreSQL' },
+      'oracle': { en: 'Oracle Database', pt: 'Oracle Database' },
+      'sqlite': { en: 'SQLite', pt: 'SQLite' },
+      'standard': { en: 'Standard SQL', pt: 'SQL Padrão' },
+    };
+    
+    return dialectMap[sqlDialect]?.en || 'SQL';
   }
 
   private extractAnalysisResult(apiResponse: any): {

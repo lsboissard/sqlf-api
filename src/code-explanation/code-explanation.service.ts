@@ -20,14 +20,19 @@ export class CodeExplanationService {
     explainCodeDto: ExplainCodeDto,
   ): Promise<CodeExplanationResponseDto> {
     try {
-      const { code, language = 'unknown' } = explainCodeDto;
+      const { 
+        code, 
+        language = 'sql',
+        sqlDialect = 'standard',
+        responseLanguage = 'pt-br'
+      } = explainCodeDto;
       const apiKey = this.configService.get<string>('app.deepseekApiKey');
 
       if (!apiKey) {
         throw new Error('DEEPSEEK_API_KEY not configured');
       }
 
-      const prompt = this.buildPrompt(code, language);
+      const prompt = this.buildPrompt(code, language, sqlDialect, responseLanguage);
 
       const requestBody = {
         model: 'deepseek-coder',
@@ -71,20 +76,55 @@ export class CodeExplanationService {
     }
   }
 
-  private buildPrompt(code: string, language: string): string {
-    return `You are a code documentation expert. Please add clear, helpful comments to the following ${language} code to explain what it does. 
+  private buildPrompt(code: string, language: string, sqlDialect: string, responseLanguage: string): string {
+    const isPortuguese = responseLanguage === 'pt-br';
+    
+    const dialectInfo = this.getDialectInfo(sqlDialect);
+    
+    if (isPortuguese) {
+      return `Você é um especialista em documentação de código SQL. Por favor, adicione comentários claros e úteis ao seguinte código ${dialectInfo} para explicar o que ele faz.
+
+Regras:
+1. Adicione comentários que expliquem o propósito e a lógica
+2. Mantenha a estrutura original do código intacta
+3. Use sintaxe de comentários SQL (-- para linha única, /* */ para múltiplas linhas)
+4. Torne os comentários concisos mas informativos
+5. Considere as particularidades do dialeto ${sqlDialect.toUpperCase()}
+6. Retorne APENAS o código SQL comentado, sem texto adicional
+
+Código SQL para comentar:
+\`\`\`sql
+${code}
+\`\`\``;
+    } else {
+      return `You are a SQL code documentation expert. Please add clear, helpful comments to the following ${dialectInfo} code to explain what it does.
 
 Rules:
 1. Add comments that explain the purpose and logic
 2. Keep the original code structure intact
-3. Use appropriate comment syntax for the language
+3. Use SQL comment syntax (-- for single line, /* */ for multi-line)
 4. Make comments concise but informative
-5. Return ONLY the commented code, no additional text
+5. Consider the particularities of ${sqlDialect.toUpperCase()} dialect
+6. Return ONLY the commented SQL code, no additional text
 
-Code to comment:
-\`\`\`${language}
+SQL code to comment:
+\`\`\`sql
 ${code}
 \`\`\``;
+    }
+  }
+
+  private getDialectInfo(sqlDialect: string): string {
+    const dialectMap: Record<string, { en: string; pt: string }> = {
+      't-sql': { en: 'T-SQL (SQL Server)', pt: 'T-SQL (SQL Server)' },
+      'mysql': { en: 'MySQL', pt: 'MySQL' },
+      'postgresql': { en: 'PostgreSQL', pt: 'PostgreSQL' },
+      'oracle': { en: 'Oracle Database', pt: 'Oracle Database' },
+      'sqlite': { en: 'SQLite', pt: 'SQLite' },
+      'standard': { en: 'Standard SQL', pt: 'SQL Padrão' },
+    };
+    
+    return dialectMap[sqlDialect]?.en || 'SQL';
   }
 
   private extractExplainedCode(apiResponse: any): string {
